@@ -211,19 +211,25 @@ if [[ "$RUN_SCRIPTS" == "1" ]] ; then
   fi
 fi
 
-if [ -z "$SKIP_COMPOSER" ]; then
-    # Try auto install for composer
-    if [ -f "/var/www/html/composer.lock" ]; then
-        if [ "$APPLICATION_ENV" == "development" ]; then
-            composer global require hirak/prestissimo
-            composer install --working-dir=/var/www/html
-        else
-            composer global require hirak/prestissimo
-            composer install --no-dev --working-dir=/var/www/html
-        fi
-    fi
-fi
+# if [ -z "$SKIP_COMPOSER" ]; then
+#     # Try auto install for composer
+#     if [ -f "/var/www/html/composer.lock" ]; then
+#         if [ "$APPLICATION_ENV" == "development" ]; then
+#             composer global require hirak/prestissimo
+#             composer install --working-dir=/var/www/html
+#         else
+#             composer global require hirak/prestissimo
+#             composer install --no-dev --working-dir=/var/www/html
+#         fi
+#     fi
+# fi
 
+# Enable Redis PHPSESSION
+RedisConfFile='/usr/local/etc/php/conf.d/docker-php-ext-redis.ini'
+if [[ ! -z "$REDIS_URL" ]] ; then
+  echo 'session.save_handler = redis' >> $RedisConfFile
+  echo 'session.save_path = ${REDIS_URL}' >> $RedisConfFile
+fi
 # Start supervisord and services
 exec /usr/bin/supervisord -n -c /etc/supervisord.conf
 
