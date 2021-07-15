@@ -1,4 +1,4 @@
-FROM php:7.3-fpm-alpine
+FROM php:7.4-fpm-alpine
 
 ENV php_conf /usr/local/etc/php-fpm.conf
 ENV fpm_conf /usr/local/etc/php-fpm.d/www.conf
@@ -155,6 +155,9 @@ RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repo
     apk update && apk upgrade &&\
     apk add --no-cache \
     bash \
+    musl-dev
+
+RUN apk add --no-cache \
     openssh-client \
     wget \
     supervisor \
@@ -181,33 +184,37 @@ RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repo
     icu-dev \
     libpq \
     libxslt-dev \
+    libgcrypt-dev \
     libffi-dev \
     freetype-dev \
     sqlite-dev \
     libjpeg-turbo-dev \
     postgresql-dev \
     py3-pip \
-    tzdata && \
-    docker-php-ext-configure gd \
-      --with-gd \
-      --with-freetype-dir=/usr/include/ \
-      --with-png-dir=/usr/include/ \
-      --with-jpeg-dir=/usr/include/ && \
+    tzdata
     #curl iconv session
     #docker-php-ext-install pdo_mysql pdo_sqlite mysqli mcrypt gd exif intl xsl json soap dom zip opcache && \
-    docker-php-ext-install iconv pdo_mysql pdo_sqlite pgsql pdo_pgsql mysqli gd exif intl xsl json soap dom zip opcache && \
-    pecl install xdebug-2.7.2 && \
-    pecl install -o -f redis && \
-    echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini && \
-    docker-php-source delete && \
+
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
+
+RUN docker-php-ext-install iconv pdo_mysql pdo_sqlite pgsql pdo_pgsql mysqli gd exif intl soap dom zip opcache json xsl
+
+RUN pecl install xdebug-2.9.8
+
+RUN pecl install -o -f redis && \
+    echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini
+
+RUN docker-php-source delete && \
     mkdir -p /etc/nginx && \
     mkdir -p /var/www/app && \
     mkdir -p /run/nginx && \
-    mkdir -p /var/log/supervisor && \
-    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
+    mkdir -p /var/log/supervisor
+
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
     php composer-setup.php --quiet --install-dir=/usr/bin --filename=composer && \
-    rm composer-setup.php && \
-    pip3 install -U pip && \
+    rm composer-setup.php
+
+RUN pip3 install -U pip && \
     pip3 install -U certbot && \
     mkdir -p /etc/letsencrypt/webrootauth && \
     apk del gcc musl-dev linux-headers libffi-dev augeas-dev python3-dev make autoconf
